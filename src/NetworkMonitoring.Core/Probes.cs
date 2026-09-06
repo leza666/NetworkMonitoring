@@ -3,7 +3,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 
-namespace NetworkMonitoring;
+namespace NetworkMonitoring.Core;
 
 /// <summary>ICMP ping 探针（原生 Ping API，域名由系统解析，无编码问题）</summary>
 public static class PingProbe

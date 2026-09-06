@@ -1,4 +1,4 @@
-namespace NetworkMonitoring;
+namespace NetworkMonitoring.Core;
 
 public enum TargetKind
 {

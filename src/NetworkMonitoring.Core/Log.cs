@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace NetworkMonitoring;
+namespace NetworkMonitoring.Core;
 
 /// <summary>控制台（前台模式）+ 文件（按天轮转，服务模式必需）日志</summary>
 public static class Log

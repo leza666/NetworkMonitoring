@@ -5,7 +5,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>NetworkMonitoring</RootNamespace>
+    <RootNamespace>NetworkMonitoring.App</RootNamespace>
     <AssemblyName>NetworkMonitoring</AssemblyName>
     <InvariantGlobalization>false</InvariantGlobalization>
   </PropertyGroup>
@@ -13,6 +13,12 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.11" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NetworkMonitoring.Core\NetworkMonitoring.Core.csproj" />
+    <ProjectReference Include="..\NetworkMonitoring.Dashboard\NetworkMonitoring.Dashboard.csproj" />
+    <ProjectReference Include="..\NetworkMonitoring.Reports\NetworkMonitoring.Reports.csproj" />
   </ItemGroup>
 
   <ItemGroup>

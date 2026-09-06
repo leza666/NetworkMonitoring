@@ -2,7 +2,10 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using NetworkMonitoring;
+using NetworkMonitoring.Core;
+using NetworkMonitoring.Dashboard;
+using NetworkMonitoring.Reports;
+using NetworkMonitoring.App;
 
 var cliArgs = Environment.GetCommandLineArgs().Skip(1).ToArray();
 

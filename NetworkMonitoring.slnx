@@ -1,5 +1,8 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/NetworkMonitoring/NetworkMonitoring.csproj" />
+    <Project Path="src/NetworkMonitoring.App/NetworkMonitoring.App.csproj" />
+    <Project Path="src/NetworkMonitoring.Core/NetworkMonitoring.Core.csproj" />
+    <Project Path="src/NetworkMonitoring.Dashboard/NetworkMonitoring.Dashboard.csproj" />
+    <Project Path="src/NetworkMonitoring.Reports/NetworkMonitoring.Reports.csproj" />
   </Folder>
 </Solution>

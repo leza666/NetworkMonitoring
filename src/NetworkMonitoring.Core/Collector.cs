@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 
-namespace NetworkMonitoring;
+namespace NetworkMonitoring.Core;
 
 /// <summary>1Hz 并发采集核心（ICMP/TCP 1Hz、TTFB 5s）+ 内存环形缓冲 + CSV 写入 + 清理</summary>
 public class Collector : IHostedService

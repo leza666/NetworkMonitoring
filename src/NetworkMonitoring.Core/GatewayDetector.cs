@@ -2,7 +2,7 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 
-namespace NetworkMonitoring;
+namespace NetworkMonitoring.Core;
 
 /// <summary>IPv4 默认网关检测：优先 GetBestInterface（与系统路由一致），降级遍历网卡</summary>
 public static class GatewayDetector

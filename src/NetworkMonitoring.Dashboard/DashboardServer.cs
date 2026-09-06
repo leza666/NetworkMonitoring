@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using NetworkMonitoring.Core;
 
-namespace NetworkMonitoring;
+namespace NetworkMonitoring.Dashboard;
 
 /// <summary>实时看板 API（与参考 server.ts 字段结构 1:1，前端 dashboard.html 零改动复用）</summary>
 public static class DashboardServer

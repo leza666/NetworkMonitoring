@@ -1,6 +1,7 @@
 using System.Diagnostics;
+using NetworkMonitoring.Core;
 
-namespace NetworkMonitoring;
+namespace NetworkMonitoring.App;
 
 /// <summary>Windows 服务注册/卸载（sc.exe，需要管理员权限；默认 LocalSystem）</summary>
 public static class ServiceInstaller

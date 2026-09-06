@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace NetworkMonitoring;
+namespace NetworkMonitoring.Core;
 
 public static class Util
 {

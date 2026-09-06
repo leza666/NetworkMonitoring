@@ -1,8 +1,9 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using NetworkMonitoring.Core;
 
-namespace NetworkMonitoring;
+namespace NetworkMonitoring.Reports;
 
 /// <summary>静态 HTML 报表：当日报表（1 分钟聚合 + 统计表）与多日对比 overview</summary>
 public static class ReportGenerator

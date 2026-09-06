@@ -24,27 +24,25 @@
 
 ```powershell
 # 前台采集器（Ctrl+C 停止；自带实时看板）—— 调试用
-& "C:\Program Files\dotnet\dotnet.exe" run --project src\NetworkMonitoring -- collect
+& "C:\Program Files\dotnet\dotnet.exe" run --project src\NetworkMonitoring.App -- collect
 
 # 打开看板
 http://localhost:8000
 
 # 静态报表（当天 / 指定日期 / 多日对比）
-& "C:\Program Files\dotnet\dotnet.exe" run --project src\NetworkMonitoring -- report
-& "C:\Program Files\dotnet\dotnet.exe" run --project src\NetworkMonitoring -- report 2026-09-01
-& "C:\Program Files\dotnet\dotnet.exe" run --project src\NetworkMonitoring -- report --all
+& "C:\Program Files\dotnet\dotnet.exe" run --project src\NetworkMonitoring.App -- report
+& "C:\Program Files\dotnet\dotnet.exe" run --project src\NetworkMonitoring.App -- report 2026-09-01
+& "C:\Program Files\dotnet\dotnet.exe" run --project src\NetworkMonitoring.App -- report --all
 ```
-
-也可用仓库内 `.\build.ps1`（封装 dotnet 完整路径）。
 
 ## 安装为 Windows 服务（推荐，开机即运行）
 
 ```powershell
 # 管理员 PowerShell
-& "C:\Program Files\dotnet\dotnet.exe" run --project src\NetworkMonitoring -- install
+& "C:\Program Files\dotnet\dotnet.exe" run --project src\NetworkMonitoring.App -- install
 
 # 卸载
-& "C:\Program Files\dotnet\dotnet.exe" run --project src\NetworkMonitoring -- uninstall
+& "C:\Program Files\dotnet\dotnet.exe" run --project src\NetworkMonitoring.App -- uninstall
 
 # 查看状态
 Get-Service NetworkMonitor
@@ -52,7 +50,7 @@ Get-Service NetworkMonitor
 
 - 服务名 `NetworkMonitor`，默认 **LocalSystem** 账号，开机自动启动，登录与否均采集
 - 服务模式无控制台，日志写入 exe 目录 `logs\app-YYYY-MM-DD.log`
-- 发布成独立 exe 后注册更稳（见 `.\build.ps1 publish`）
+- 发布：`& "C:\Program Files\dotnet\dotnet.exe" publish src\NetworkMonitoring.App -c Release -o dist`
 
 ## 采集行为
 
@@ -97,18 +95,12 @@ baidu_tcp_ms,bilibili_tcp_ms,baidu_ttfb_ms,bilibili_ttfb_ms,failures
 
 ```
 NetworkMonitoring/
-├── NetworkMonitoring.sln / build.ps1
-├── src/NetworkMonitoring/
-│   ├── Config.cs          # 目标、端口(8000)、留存天数(90) 等
-│   ├── Models.cs          # 类型定义
-│   ├── Util.cs / Log.cs   # 时间格式化、清理、文件日志
-│   ├── GatewayDetector.cs # 默认网关（GetBestInterface + 遍历降级）
-│   ├── Probes.cs          # Ping / TCP connect / HTTPS TTFB 探针
-│   ├── Collector.cs       # 1Hz 并发采集核心 + 内存环形缓冲 + CSV
-│   ├── DashboardServer.cs # 看板 API（Minimal API）
-│   ├── ReportGenerator.cs # 静态报表（当日 + 多日对比）
-│   ├── ServiceInstaller.cs# sc.exe 注册/卸载服务
-│   └── Program.cs         # 入口（服务/collect/report/install/uninstall）
+├── NetworkMonitoring.slnx
+├── src/
+│   ├── NetworkMonitoring.Core/    # 类库：Config/Models/Util/Log/GatewayDetector/Probes/Collector
+│   ├── NetworkMonitoring.Dashboard/# 类库：DashboardServer（看板 API）
+│   ├── NetworkMonitoring.Reports/ # 类库：ReportGenerator（报表）
+│   └── NetworkMonitoring.App/     # exe 入口：Program/ServiceInstaller + assets
 ├── assets/                # dashboard.html + chart.min.js
 ├── data/                  # 按天 CSV（运行时生成）
 └── reports/               # 静态 HTML 报表（运行时生成）

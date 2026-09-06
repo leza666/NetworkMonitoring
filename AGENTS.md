@@ -4,9 +4,13 @@
 
 ## 构建与运行
 
-- **dotnet 不在 PATH**，必须用完整路径：`& "C:\Program Files\dotnet\dotnet.exe"`，或 `.\build.ps1 <build|run|publish>`（已封装）。
-- 入口：单一项目 `src\NetworkMonitoring\NetworkMonitoring.csproj`（net10.0 + FrameworkReference AspNetCore.App + WindowsServices 包）。
-- 命令（`dotnet run --project src\NetworkMonitoring -- <cmd>`）：
+- **dotnet 不在 PATH**，必须用完整路径：`& "C:\Program Files\dotnet\dotnet.exe"`。
+- 多项目结构（`NetworkMonitoring.slnx`）：
+  - `src\NetworkMonitoring.Core\` 类库：Models/Config/Util/Log/GatewayDetector/Probes/Collector（唯一无 ASP.NET 依赖，引 Hosting.Abstractions 包）
+  - `src\NetworkMonitoring.Dashboard\` 类库：DashboardServer（引 Core + AspNetCore.App）
+  - `src\NetworkMonitoring.Reports\` 类库：ReportGenerator（引 Core）
+  - `src\NetworkMonitoring.App\` exe 入口：Program/ServiceInstaller（引三者 + WindowsServices 包，`AssemblyName` 保持 `NetworkMonitoring`，assets 拷贝在此）
+- 命令（`dotnet run --project src\NetworkMonitoring.App -- <cmd>`）：
   - `collect` 前台采集+看板（Ctrl+C 停止）
   - `report [YYYY-MM-DD|--all]` 生成报表
   - `install` / `uninstall` 注册/卸载服务（**install 必须管理员**，非管理员用 `Start-Process -Verb RunAs` 提升）
