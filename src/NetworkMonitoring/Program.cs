@@ -19,12 +19,12 @@ switch (cliArgs.FirstOrDefault())
         await RunApp(serviceMode: false);
         return 0;
     case "report":
-    {
-        if (cliArgs.Contains("--all") || cliArgs.Contains("-a"))
-            return ReportGenerator.GenerateOverview() ? 0 : 1;
-        var dateArg = cliArgs.Skip(1).FirstOrDefault(a => !a.StartsWith("-"));
-        return ReportGenerator.GenerateDaily(dateArg) ? 0 : 1;
-    }
+        {
+            if (cliArgs.Contains("--all") || cliArgs.Contains("-a"))
+                return ReportGenerator.GenerateOverview() ? 0 : 1;
+            var dateArg = cliArgs.Skip(1).FirstOrDefault(a => !a.StartsWith("-"));
+            return ReportGenerator.GenerateDaily(dateArg) ? 0 : 1;
+        }
     case "install":
         return ServiceInstaller.Install() ? 0 : 1;
     case "uninstall":
@@ -59,7 +59,7 @@ static async Task RunApp(bool serviceMode)
         Console.WriteLine($"采样频率: 1Hz  |  看板: http://localhost:{Config.DashboardPort}  |  Ctrl+C 停止");
         Console.WriteLine("----------------------------------------");
     }
-    ((IWebHostBuilder)builder.WebHost).UseUrls($"http://127.0.0.1:{Config.DashboardPort}");
+    builder.WebHost.UseUrls($"http://127.0.0.1:{Config.DashboardPort}");
     builder.Services.AddSingleton<Collector>();
     builder.Services.AddHostedService(sp => sp.GetRequiredService<Collector>());
     var app = builder.Build();

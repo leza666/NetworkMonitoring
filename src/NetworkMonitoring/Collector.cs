@@ -1,7 +1,7 @@
+using Microsoft.Extensions.Hosting;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
-using Microsoft.Extensions.Hosting;
 
 namespace NetworkMonitoring;
 
