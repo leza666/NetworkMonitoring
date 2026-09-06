@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>家庭网络监控</title>
+<script src="chart.min.js"></script>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; background: #0f1419; color: #e6e6e6; padding: 16px; }
+  h1 { font-size: 20px; margin-bottom: 12px; }
+  .topbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .topbar .status { font-size: 13px; color: #8b949e; }
+  .ranges { margin-left: auto; display: flex; gap: 6px; }
+  .ranges button { background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+  .ranges button.active { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+  #cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 10px 12px; }
+  .card .name { font-size: 13px; color: #8b949e; }
+  .card .val { font-size: 24px; font-weight: 600; margin: 4px 0 2px; }
+  .card .meta { font-size: 11px; color: #8b949e; }
+  .card .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+  .panel { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+  .panel h2 { font-size: 14px; color: #c9d1d9; margin-bottom: 8px; }
+  .chart-wrap { position: relative; height: 340px; }
+  .chart-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .legend-hint { font-size: 12px; color: #8b949e; margin-top: 6px; }
+  #footer { font-size: 12px; color: #484f58; text-align: center; margin-top: 8px; }
+</style>
+</head>
+<body>
+  <h1>🏠 家庭网络监控</h1>
+  <div class="topbar">
+    <span class="status" id="status">连接中…</span>
+    <div class="ranges">
+      <button data-min="5" class="active">5分钟</button>
+      <button data-min="30">30分钟</button>
+      <button data-min="60">1小时</button>
+      <button data-min="360">6小时</button>
+    </div>
+  </div>
+  <div id="cards"></div>
+  <div class="panel"><h2>延迟曲线 ICMP（毫秒，每秒）</h2><div class="chart-wrap"><canvas id="latency"></canvas></div></div>
+  <div class="panel"><h2>TCP 连接握手延迟（毫秒，每秒）</h2><div class="chart-wrap"><canvas id="tcp"></canvas></div><div class="legend-hint">网络可达性 RTT（百度 / 哔哩哔哩）· TCP 是浏览器真实连接通道（443），ICMP 仅网络层探测；两者都通才代表目标可访问</div></div>
+  <div class="panel"><h2>HTTPS 首字节 TTFB（毫秒，每5秒）</h2><div class="chart-wrap"><canvas id="ttfb"></canvas></div><div class="legend-hint">反映"打开网站/视频加载慢"（百度 / 哔哩哔哩）——TTFB 高即首屏慢</div></div>
+  <div id="footer">🏠 家庭网络监控</div>
+
+<script>
+const COLORS = { gateway: "#4facfe", modem: "#ffd43b", baidu: "#ff6b6b", bilibili: "#ffa94d", alibaba: "#2bd9af" };
+let TARGETS = [], TCP_TARGETS = [], TTFB_TARGETS = [];
+let charts = {};
+let WINDOW_MIN = 5;
+let tickCount = 0;
+
+async function fetchJson(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+}
+
+function mkChart(canvasId, targetList, colors, opts) {
+  const cfg = opts ?? {};
+  return new Chart(document.getElementById(canvasId), {
+    type: "line",
+    data: { labels: [], datasets: targetList.map(t => ({ label: t.label, data: [], borderColor: colors[t.key] ?? "#888", backgroundColor: (colors[t.key] ?? "#888") + "22", borderWidth: 1.5, pointRadius: cfg.pointRadius ?? 0, tension: 0.15, spanGaps: cfg.spanGaps ?? false })) },
+    options: {
+      animation: false,
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
+      plugins: { legend: { labels: { color: "#c9d1d9", boxWidth: 10, font: { size: 11 } } }, tooltip: { mode: "index", intersect: false } },
+      scales: {
+        x: { ticks: { color: "#8b949e", maxTicksLimit: 12, maxRotation: 0 }, grid: { color: "#21262d" } },
+        y: { ticks: { color: "#8b949e" }, grid: { color: "#21262d" }, title: { display: true, text: "ms", color: "#8b949e" } }
+      }
+    }
+  });
+}
+
+async function init() {
+  const meta = await fetchJson("/api/meta");
+  TARGETS = meta.targets;
+  TCP_TARGETS = meta.tcpTargets;
+  TTFB_TARGETS = meta.ttfbTargets;
+  charts.icmp = mkChart("latency", TARGETS, meta.colors);
+  charts.tcp = mkChart("tcp", TCP_TARGETS, meta.tcpColors);
+  // TTFB 为每 5 秒低频采样：只绘制有效采样点并显示点标记，避免曲线断裂
+  charts.ttfb = mkChart("ttfb", TTFB_TARGETS, meta.ttfbColors, { spanGaps: true, pointRadius: 2 });
+  loop();
+}
+
+async function loop() {
+  try {
+    await refresh();
+    tickCount++;
+  } catch (e) {
+    setStatus("⚠ 连接异常: " + e.message);
+  }
+  const waitMs = tickCount % 12 === 0 ? 500 : 0; // 每约 1 分钟校准一次时钟
+  setTimeout(loop, 5000);
+}
+
+function setStatus(s) {
+  document.getElementById("status").textContent = s + " · 每5秒自动刷新";
+}
+
+async function refresh() {
+  const from = Date.now() - WINDOW_MIN * 60 * 1000;
+  const [latest, summary] = await Promise.all([
+    fetchJson(`/api/latest?from=${from}`),
+    fetchJson(`/api/summary`),
+  ]);
+  renderCards(summary.targets, summary.currentLossKeys);
+  renderCharts(latest.points);
+  setStatus("已更新 " + new Date().toLocaleTimeString() + (latest.points.length ? " · 最近 " + formatCount(latest.points.length) + " 个点" : " · 等待数据…"));
+}
+
+function formatCount(n) {
+  return n >= 10000 ? (n / 10000).toFixed(1) + "万" : String(n);
+}
+
+function renderCards(targets, currentLossKeys) {
+  const box = document.getElementById("cards");
+  box.innerHTML = "";
+  for (const t of targets) {
+    // 丢包率始终显示真实百分比（0~100%）
+    const lossPct = (t.lossPct * 100).toFixed(1) + "%";
+    const losing = currentLossKeys.includes(t.key) || (t.avg === null && t.lossPct > 0);
+    const lostAll = t.avg === null && t.lossPct > 0;
+    const extras = [];
+    if (t.tcpAvg !== null) extras.push("TCP " + t.tcpAvg.toFixed(0) + "ms");
+    if (t.ttfbAvg !== null) extras.push("TTFB " + t.ttfbAvg.toFixed(0) + "ms");
+    const metaTail = extras.length ? " · " + extras.join(" · ") : "";
+    const el = document.createElement("div");
+    el.className = "card";
+    el.style.borderColor = losing ? "#f85149" : "#30363d";
+    el.innerHTML = `
+      <div class="name"><span class="dot" style="background:${COLORS[t.key] ?? "#888"}"></span>${t.label}</div>
+      <div class="val" style="color:${losing ? "#f85149" : "#e6e6e6"}">${lostAll ? "丢包" : (t.avg !== null ? t.avg.toFixed(1) + " ms" : "—")}</div>
+      <div class="meta">30分钟均值 ${t.avg !== null ? t.avg.toFixed(1) + "ms" : "—"} · 最大 ${t.max !== null ? t.max.toFixed(0) + "ms" : "—"} · 丢包 ${lossPct}${metaTail}</div>`;
+    box.appendChild(el);
+  }
+}
+
+function renderCharts(points) {
+  if (!points.length) return;
+  const nI = TARGETS.length;
+  const nT = TCP_TARGETS.length;
+  const ttfbCol = 1 + nI + nT;
+  const labels = points.map(p => new Date(p[0]).toLocaleTimeString());
+  charts.icmp.data.labels = labels;
+  charts.tcp.data.labels = labels;
+  TARGETS.forEach((t, i) => { charts.icmp.data.datasets[i].data = points.map(p => p[1 + i]); });
+  TCP_TARGETS.forEach((t, i) => { charts.tcp.data.datasets[i].data = points.map(p => p[1 + nI + i]); });
+  // TTFB 低频采样：仅保留有值时刻为时间轴，曲线连续、无 null 断点
+  const ttRows = points.filter(p => p[ttfbCol] !== null || p[ttfbCol + 1] !== null);
+  charts.ttfb.data.labels = ttRows.map(p => new Date(p[0]).toLocaleTimeString());
+  TTFB_TARGETS.forEach((t, i) => { charts.ttfb.data.datasets[i].data = ttRows.map(p => p[ttfbCol + i]); });
+  charts.icmp.update();
+  charts.tcp.update();
+  charts.ttfb.update();
+}
+
+document.querySelectorAll(".ranges button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".ranges button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    WINDOW_MIN = Number(btn.dataset.min);
+    refresh().catch(() => {});
+  });
+});
+
+init();
+</script>
+</body>
+</html>

@@ -427,3 +427,9 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# NetworkMonitoring 数据与产物
+dist/
+data/
+reports/
+logs/
